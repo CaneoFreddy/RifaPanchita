@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablero Rifa para Panchita</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #FFF0F6;
+      min-height: 100vh;
+      padding: 1.5rem;
+      color: #333;
+    }
+    .wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(214,51,132,0.10);
+      padding: 1.5rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 1.2rem;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #D63384;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 13px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .quick-tools {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .search-box {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #F0C0D8;
+      border-radius: 999px;
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(214, 51, 132, 0.06);
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      font-size: 13px;
+      min-width: 180px;
+      padding: 6px 10px;
+      font-family: Arial, sans-serif;
+      background: transparent;
+      color: #5A3A4B;
+    }
+    .search-result {
+      font-size: 12px;
+      color: #8B5C74;
+      min-height: 16px;
+    }
+    .status {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #FDE8F0;
+      color: #D63384;
+    }
+    .status.online { background: #EAF3DE; color: #3B6D11; }
+    .prizes {
+      margin-bottom: 0.8rem;
+    }
+    .prizes-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #D63384;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .prizes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+    .prize-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      background: #FDF4F8;
+      border: 0.5px solid #F0C0D8;
+      border-radius: 8px;
+      padding: 5px 7px;
+    }
+    .prize-num {
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      background: #D63384;
+      border-radius: 5px;
+      min-width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .prize-text {
+      font-size: 10px;
+      color: #555;
+      line-height: 1.25;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0.5px solid #E8C8D8;
+      background: #FDF4F8;
+      color: #BBA0B0;
+      transition: transform 0.08s, box-shadow 0.08s;
+      user-select: none;
+      position: relative;
+      min-height: 52px;
+    }
+    .cell.match {
+      box-shadow: 0 0 0 3px rgba(214, 51, 132, 0.20);
+      border-color: #D63384;
+    }
+    .cell:hover {
+      transform: scale(1.06);
+      z-index: 2;
+      box-shadow: 0 6px 16px rgba(214, 51, 132, 0.12);
+    }
+    .cell.sold {
+      background: #FDE8F0;
+      border-color: #D63384;
+      font-size: 0;
+    }
+    .cell-tooltip {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 8px);
+      transform: translateX(-50%) translateY(4px);
+      min-width: 160px;
+      max-width: 220px;
+      background: rgba(255, 255, 255, 0.98);
+      color: #5A3A4B;
+      border: 1px solid #F0C0D8;
+      border-radius: 12px;
+      padding: 8px 10px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+      font-size: 11px;
+      line-height: 1.35;
+      white-space: normal;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      z-index: 5;
+    }
+    .cell.sold:hover .cell-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .cell.sold::after {
+      content: '♥';
+      font-size: 18px;
+      color: #D63384;
+      position: absolute;
+    }
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 0.5rem;
+    }
+    .hint { font-size: 12px; color: #BBB; }
+    .btn {
+      padding: 7px 18px;
+      border-radius: 8px;
+      border: 1px solid #F0C0D8;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      color: #D63384;
+      font-family: Arial, sans-serif;
+    }
+    .btn:hover { background: #FDE8F0; }
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #D63384;
+      font-size: 14px;
+    }
+  
+    .summary {
+      display: none;
+      text-align: center;
+      font-size: 12px;
+      color: #8B5C74;
+      margin: -0.2rem 0 0.8rem;
+      font-weight: 600;
+    }
+    .pagination {
+      display: none;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 0 0 0.9rem;
+    }
+    .page-btn {
+      border: 1px solid #F0C0D8;
+      background: #fff;
+      color: #D63384;
+      border-radius: 999px;
+      padding: 7px 12px;
+      min-width: 40px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+    }
+    .page-btn:hover:not(:disabled) { background: #FDE8F0; }
+    .page-btn.active {
+      background: #D63384;
+      color: #fff;
+      border-color: #D63384;
+    }
+    .page-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .winner-card {
+      display: none;
+      margin: 0.75rem 0 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #FFF9D8, #FFE4F0);
+      border: 1px solid #F0C0D8;
+      color: #7B2151;
+      box-shadow: 0 8px 18px rgba(214, 51, 132, 0.08);
+    }
+    .winner-card strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .winner-card span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn.primary {
+      background: #D63384;
+      color: #fff;
+      border-color: #D63384;
+    }
+    .btn.primary:hover { background: #BF286E; }
+    .btn.secondary {
+      background: #fff;
+      color: #D63384;
+    }
+    .btn.secondary:hover { background: #FDE8F0; }
+    .cell.sold {
+      background: #FDE8F0;
+      border-color: #D63384;
+      font-size: 0;
+      box-shadow: inset 0 0 0 1px rgba(214, 51, 132, 0.08);
+    }
+    .cell.winner {
+      border-color: #E3B300;
+      box-shadow: 0 0 0 2px rgba(227, 179, 0, 0.2);
+    }
+    .cell.sold::after {
+      content: '♥';
+      font-size: 18px;
+      color: #D63384;
+      position: absolute;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(24, 8, 14, 0.48);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 20;
+    }
+    .modal.open { display: flex; }
+    .modal-card {
+      width: min(420px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      padding: 1rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 0.9rem;
+    }
+    .modal-head h2 {
+      font-size: 20px;
+      color: #D63384;
+      margin-bottom: 4px;
+    }
+    .modal-head p {
+      font-size: 12px;
+      color: #8B5C74;
+      line-height: 1.4;
+    }
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #F0C0D8;
+      background: #fff;
+      color: #D63384;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .editor-form {
+      display: grid;
+      gap: 0.8rem;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #8B5C74;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .field input {
+      width: 100%;
+      border: 1px solid #E8C8D8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      font-family: Arial, sans-serif;
+    }
+    .field input:focus {
+      border-color: #D63384;
+      box-shadow: 0 0 0 3px rgba(214, 51, 132, 0.12);
+    }
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 0.4rem;
+    }
+    .editor-actions .left,
+    .editor-actions .right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .status.online { background: #EAF3DE; color: #3B6D11; }
+    .winner-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(24, 8, 14, 0.58);
+      z-index: 30;
+      overflow: hidden;
+    }
+    .winner-overlay.open { display: flex; }
+    .winner-card-modal {
+      width: min(460px, 100%);
+      background: linear-gradient(180deg, #fff, #fff7fb);
+      border-radius: 22px;
+      padding: 1.2rem;
+      box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
+      border: 1px solid #F0C0D8;
+      position: relative;
+      z-index: 2;
+      animation: winner-pop 220ms ease-out;
+    }
+    @keyframes winner-pop {
+      from { transform: scale(0.94); opacity: 0.4; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .winner-card-modal h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8B5C74;
+      margin-bottom: 8px;
+    }
+    .winner-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #D63384;
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .winner-big-number {
+      font-size: 74px;
+      line-height: 1;
+      color: #D63384;
+      font-weight: 900;
+      margin-bottom: 10px;
+      letter-spacing: -2px;
+    }
+    .winner-details {
+      display: grid;
+      gap: 6px;
+      font-size: 16px;
+      color: #5A3A4B;
+      margin-bottom: 16px;
+    }
+    .winner-details strong {
+      color: #2C1A24;
+    }
+    .winner-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 31;
+    }
+    .confetti-piece {
+      position: absolute;
+      top: -16px;
+      width: 12px;
+      height: 18px;
+      border-radius: 2px;
+      opacity: 0.95;
+      animation: confetti-fall 2600ms linear forwards;
+    }
+    @keyframes confetti-fall {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      100% { transform: translate3d(var(--dx), 110vh, 0) rotate(720deg); }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>🐱 Rifa para Panchita</h1>
+      <p>Haz clic en un número para marcarlo como vendido · clic de nuevo para desmarcar</p>
+      <span class="status" id="status">Conectando...</span>
+      <div class="quick-tools">
+        <div class="search-box">
+          <input id="quickSearch" type="text" placeholder="Buscar número, nombre o contacto" />
+          <button class="btn primary" id="searchBtn" type="button">Buscar</button>
+        </div>
+      </div>
+      <div class="search-result" id="searchResult"></div>
+    </div>
+
+    <div class="prizes">
+      <div class="prizes-title">🎁 Premios</div>
+      <div class="prizes-grid">
+        <div class="prize-item"><div class="prize-num">1</div><div class="prize-text">2 Noches en cabaña para 4 personas en Pichidangui (IV Región)</div></div>
+        <div class="prize-item"><div class="prize-num">7</div><div class="prize-text">3 Plantitas suculentas</div></div>
+        <div class="prize-item"><div class="prize-num">2</div><div class="prize-text">Lentes de sol + estuche a elección</div></div>
+        <div class="prize-item"><div class="prize-num">8</div><div class="prize-text">Premio Sorpresa</div></div>
+        <div class="prize-item"><div class="prize-num">3</div><div class="prize-text">Set de 3 roll-on aromáticos</div></div>
+        <div class="prize-item"><div class="prize-num">9</div><div class="prize-text">Una caja de alfajores artesanales</div></div>
+        <div class="prize-item"><div class="prize-num">4</div><div class="prize-text">1 Sesión de Terapia Floral de Bach + Frasco Personalizado</div></div>
+        <div class="prize-item"><div class="prize-num">10</div><div class="prize-text">Premio sorpresa</div></div>
+        <div class="prize-item"><div class="prize-num">5</div><div class="prize-text">Una Juguera Shake</div></div>
+        <div class="prize-item"><div class="prize-num">11</div><div class="prize-text">Collar con QR para mascotas</div></div>
+        <div class="prize-item"><div class="prize-num">6</div><div class="prize-text">Creación de página web simple personalizada para tu emprendimiento</div></div>
+        <div class="prize-item"><div class="prize-num">12</div><div class="prize-text">Gran premio sorpresa</div></div>
+      </div>
+    </div>
+
+
+    <div class="loading" id="loading">Cargando tablero... 🐱</div>
+    <div class="pagination" id="pagination"></div>
+    <div class="summary" id="summary"></div>
+    <div class="grid" id="grid" style="display:none"></div>
+    <div class="winner-card" id="winnerCard"></div>
+
+    <div class="footer">
+      <span class="hint">♥ = vendido · clic en un número para editarlo</span>
+      <div class="footer-actions">
+        <button class="btn primary" id="drawBtn" type="button">Realizar sorteo</button>
+        <button class="btn" id="resetBtn" type="button">Reiniciar todo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="editorModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="modalTitle">Número 1</h2>
+          <p id="modalSubtitle">Completa nombre y contacto para dejar el número guardado en vivo.</p>
+        </div>
+        <button class="icon-btn" id="closeModalBtn" type="button" aria-label="Cerrar">×</button>
+      </div>
+      <div class="editor-form">
+        <div class="field">
+          <label for="nameInput">Nombre</label>
+          <input id="nameInput" type="text" placeholder="Nombre de la persona" />
+        </div>
+        <div class="field">
+          <label for="contactInput">Número de contacto</label>
+          <input id="contactInput" type="text" placeholder="WhatsApp o teléfono" />
+        </div>
+        <div class="editor-actions">
+          <div class="left">
+            <button class="btn secondary" id="freeBtn" type="button">Marcar libre</button>
+          </div>
+          <div class="right">
+            <button class="btn" id="cancelBtn" type="button">Cancelar</button>
+            <button class="btn primary" id="saveBtn" type="button">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="winner-overlay" id="winnerOverlay" aria-hidden="true">
+    <div class="winner-card-modal" role="dialog" aria-modal="true" aria-labelledby="winnerModalTitle">
+      <h2 id="winnerModalTitle">Ganador del sorteo</h2>
+      <div class="winner-badge">Sorteo realizado</div>
+      <div class="winner-big-number" id="winnerModalNumber">--</div>
+      <div class="winner-details">
+        <div><strong>Nombre:</strong> <span id="winnerModalName">-</span></div>
+        <div><strong>Contacto:</strong> <span id="winnerModalContact">-</span></div>
+      </div>
+      <div class="winner-actions">
+        <button class="btn primary" id="closeWinnerBtn" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+   const firebaseConfig = {
+    apiKey: "AIzaSyCARQ7ovoEnHarsmWtwHOVwjfBgDSJr_28",
+    authDomain: "rifa-panchita.firebaseapp.com",
+    databaseURL: "https://rifa-panchita-default-rtdb.firebaseio.com",
+    projectId: "rifa-panchita",
+    storageBucket: "rifa-panchita.firebasestorage.app",
+    messagingSenderId: "350428089493",
+    appId: "1:350428089493:web:1dfa038cb2089b0ef89f9c",
+    measurementId: "G-HH1VYMWBX3"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const soldRef = ref(db, 'vendidos');
+
+    const TOTAL = 400;
+    const PAGE_SIZE = 100;
+    const totalPages = Math.ceil(TOTAL / PAGE_SIZE);
+
+    let sold = new Map();
+    let currentPage = 1;
+    let selectedNumber = null;
+    let highlightedWinner = null;
+
+    const statusEl = document.getElementById('status');
+    const gridEl = document.getElementById('grid');
+    const loadingEl = document.getElementById('loading');
+    const paginationEl = document.getElementById('pagination');
+    const summaryEl = document.getElementById('summary');
+    const winnerCardEl = document.getElementById('winnerCard');
+    const modalEl = document.getElementById('editorModal');
+    const winnerOverlayEl = document.getElementById('winnerOverlay');
+    const winnerModalNumberEl = document.getElementById('winnerModalNumber');
+    const winnerModalNameEl = document.getElementById('winnerModalName');
+    const winnerModalContactEl = document.getElementById('winnerModalContact');
+    const modalTitleEl = document.getElementById('modalTitle');
+    const modalSubtitleEl = document.getElementById('modalSubtitle');
+    const nameInput = document.getElementById('nameInput');
+    const contactInput = document.getElementById('contactInput');
+    const saveBtn = document.getElementById('saveBtn');
+    const freeBtn = document.getElementById('freeBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const closeWinnerBtn = document.getElementById('closeWinnerBtn');
+    const drawBtn = document.getElementById('drawBtn');
+    const quickSearchInput = document.getElementById('quickSearch');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchResultEl = document.getElementById('searchResult');
+    const resetBtn = document.getElementById('resetBtn');
+    const confettiLayerEl = document.getElementById('confettiLayer');
+    let searchMatchNumber = null;
+
+    function normalizeEntry(value) {
+      if (value && typeof value === 'object') {
+        return {
+          name: value.name || '',
+          contact: value.contact || '',
+          soldAt: value.soldAt || null,
+          updatedAt: value.updatedAt || null
+        };
+      }
+      return { name: '', contact: '', soldAt: null, updatedAt: null };
+    }
+
+    function getValidEntries() {
+      return Array.from(sold.entries()).filter(function(entry) {
+        return entry[0] >= 1 && entry[0] <= TOTAL;
+      });
+    }
+
+    function getEntry(number) {
+      return sold.get(number) || null;
+    }
+
+    function clampPage(page) {
+      return Math.max(1, Math.min(totalPages, page));
+    }
+
+    function goToPage(page) {
+      currentPage = clampPage(page);
+      buildGrid();
+      renderPagination();
+      updateSummary();
+    }
+
+    function buildGrid() {
+      gridEl.innerHTML = '';
+      const start = (currentPage - 1) * PAGE_SIZE + 1;
+      const end = Math.min(start + PAGE_SIZE - 1, TOTAL);
+
+      for (let i = start; i <= end; i++) {
+        const entry = getEntry(i);
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        if (entry) {
+          cell.className += ' sold';
+        }
+        if (highlightedWinner === i) {
+          cell.className += ' winner';
+        }
+        if (searchMatchNumber === i) {
+          cell.className += ' match';
+        }
+        if (!entry) {
+          cell.textContent = i;
+        }
+        if (entry) {
+          const tooltip = document.createElement('div');
+          tooltip.className = 'cell-tooltip';
+          tooltip.textContent = 'Nombre: ' + (entry.name || 'sin nombre') + ' · Contacto: ' + (entry.contact || 'sin contacto');
+          cell.appendChild(tooltip);
+        }
+        cell.onclick = function() {
+          openEditor(i);
+        };
+        gridEl.appendChild(cell);
+      }
+    }
+
+    function setSearchMessage(message, isError) {
+      searchResultEl.textContent = message || '';
+      searchResultEl.style.color = isError ? '#B23A5B' : '#8B5C74';
+    }
+
+    function performQuickSearch() {
+      const raw = quickSearchInput.value.trim();
+      if (!raw) {
+        searchMatchNumber = null;
+        setSearchMessage('');
+        refreshFromData();
+        return;
+      }
+
+      const lower = raw.toLowerCase();
+      let match = null;
+
+      const numeric = Number(raw);
+      if (Number.isInteger(numeric) && numeric >= 1 && numeric <= TOTAL) {
+        match = numeric;
+      } else {
+        const found = Array.from(sold.entries()).find(function(entry) {
+          const number = String(entry[0]);
+          const data = entry[1] || {};
+          const name = String(data.name || '').toLowerCase();
+          const contact = String(data.contact || '').toLowerCase();
+          return number.includes(lower) || name.includes(lower) || contact.includes(lower);
+        });
+        if (found) {
+          match = found[0];
+        }
+      }
+
+      if (!match) {
+        searchMatchNumber = null;
+        setSearchMessage('No encontré coincidencias.', true);
+        refreshFromData();
+        return;
+      }
+
+      searchMatchNumber = match;
+      currentPage = clampPage(Math.ceil(match / PAGE_SIZE));
+      setSearchMessage('Encontré el número ' + match + '.');
+      refreshFromData();
+      setTimeout(function() {
+        const node = document.querySelector('.cell.match');
+        if (node) {
+          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 120);
+    }
+
+    function renderPagination() {
+      paginationEl.innerHTML = '';
+      paginationEl.style.display = 'flex';
+
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'page-btn';
+      prev.textContent = 'Anterior';
+      prev.disabled = currentPage === 1;
+      prev.onclick = function() {
+        goToPage(currentPage - 1);
+      };
+      paginationEl.appendChild(prev);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'page-btn' + (i === currentPage ? ' active' : '');
+        button.textContent = String(i);
+        button.onclick = function() {
+          goToPage(i);
+        };
+        paginationEl.appendChild(button);
+      }
+
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'page-btn';
+      next.textContent = 'Siguiente';
+      next.disabled = currentPage === totalPages;
+      next.onclick = function() {
+        goToPage(currentPage + 1);
+      };
+      paginationEl.appendChild(next);
+    }
+
+    function updateSummary() {
+      summaryEl.style.display = 'block';
+      summaryEl.textContent = 'Vendidos: ' + getValidEntries().length + ' de ' + TOTAL + ' · Página ' + currentPage + ' de ' + totalPages;
+    }
+
+    function updateWinnerCard(number) {
+      if (!number) {
+        winnerCardEl.style.display = 'none';
+        winnerCardEl.innerHTML = '';
+        return;
+      }
+
+      const entry = getEntry(number) || { name: '', contact: '' };
+      winnerCardEl.style.display = 'block';
+      winnerCardEl.innerHTML = '';
+
+      const title = document.createElement('strong');
+      title.textContent = 'Ganador del sorteo: número ' + number;
+      winnerCardEl.appendChild(title);
+
+      const nameLine = document.createElement('span');
+      nameLine.textContent = 'Nombre: ' + (entry.name || 'sin nombre');
+      winnerCardEl.appendChild(nameLine);
+
+      const contactLine = document.createElement('span');
+      contactLine.textContent = 'Contacto: ' + (entry.contact || 'sin contacto');
+      winnerCardEl.appendChild(contactLine);
+    }
+
+    function openWinnerPopup(number) {
+      const entry = getEntry(number) || { name: '', contact: '' };
+      winnerModalNumberEl.textContent = String(number);
+      winnerModalNameEl.textContent = entry.name || 'sin nombre';
+      winnerModalContactEl.textContent = entry.contact || 'sin contacto';
+      winnerOverlayEl.classList.add('open');
+      winnerOverlayEl.setAttribute('aria-hidden', 'false');
+      burstConfetti();
+    }
+
+    function closeWinnerPopup() {
+      winnerOverlayEl.classList.remove('open');
+      winnerOverlayEl.setAttribute('aria-hidden', 'true');
+    }
+
+    function burstConfetti() {
+      confettiLayerEl.innerHTML = '';
+      const colors = ['#D63384', '#FFB703', '#8EECF5', '#FDE68A', '#EF476F', '#06D6A0'];
+      const pieces = 70;
+      for (let i = 0; i < pieces; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[i % colors.length];
+        piece.style.setProperty('--dx', (Math.random() * 2 - 1) * 180 + 'px');
+        piece.style.animationDelay = (Math.random() * 220) + 'ms';
+        piece.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+        confettiLayerEl.appendChild(piece);
+      }
+      setTimeout(function() {
+        confettiLayerEl.innerHTML = '';
+      }, 2800);
+    }
+
+    function openEditor(number) {
+      selectedNumber = number;
+      const entry = getEntry(number) || { name: '', contact: '' };
+      modalTitleEl.textContent = 'Número ' + number;
+      modalSubtitleEl.textContent = 'Guarda nombre y contacto para dejar este número registrado.';
+      nameInput.value = entry.name || '';
+      contactInput.value = entry.contact || '';
+      modalEl.classList.add('open');
+      modalEl.setAttribute('aria-hidden', 'false');
+      setTimeout(function() {
+        nameInput.focus();
+      }, 0);
+    }
+
+    function closeEditor() {
+      modalEl.classList.remove('open');
+      modalEl.setAttribute('aria-hidden', 'true');
+      selectedNumber = null;
+    }
+
+    function saveCurrentEntry() {
+      if (selectedNumber === null) {
+        return;
+      }
+
+      const name = nameInput.value.trim();
+      const contact = contactInput.value.trim();
+
+      if (!name && !contact) {
+        alert('Escribe al menos un nombre o un contacto.');
+        return;
+      }
+
+      set(ref(db, 'vendidos/' + selectedNumber), {
+        name: name,
+        contact: contact,
+        soldAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      closeEditor();
+    }
+
+    function freeCurrentEntry() {
+      if (selectedNumber === null) {
+        return;
+      }
+      if (!confirm('¿Liberar el número ' + selectedNumber + '?')) {
+        return;
+      }
+      remove(ref(db, 'vendidos/' + selectedNumber));
+      closeEditor();
+    }
+
+    function getRandomIndex(max) {
+      const values = new Uint32Array(1);
+      crypto.getRandomValues(values);
+      return values[0] % max;
+    }
+
+    function runDraw() {
+      const entries = getValidEntries();
+      if (!entries.length) {
+        alert('No hay números vendidos para sortear.');
+        return;
+      }
+
+      const winnerPair = entries[getRandomIndex(entries.length)];
+      highlightedWinner = winnerPair[0];
+      currentPage = clampPage(Math.ceil(highlightedWinner / PAGE_SIZE));
+
+      buildGrid();
+      renderPagination();
+      updateSummary();
+      updateWinnerCard(highlightedWinner);
+      openWinnerPopup(highlightedWinner);
+
+      statusEl.textContent = 'Sorteo listo';
+      statusEl.className = 'status online';
+
+      setTimeout(function() {
+        const winnerCell = document.querySelector('.cell.winner');
+        if (winnerCell) {
+          winnerCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    function refreshFromData() {
+      buildGrid();
+      renderPagination();
+      updateSummary();
+      if (highlightedWinner !== null) {
+        updateWinnerCard(highlightedWinner);
+      }
+    }
+
+    onValue(soldRef, function(snapshot) {
+      const data = snapshot.val() || {};
+      sold = new Map(Object.keys(data).map(function(key) {
+        return [Number(key), normalizeEntry(data[key])];
+      }));
+      loadingEl.style.display = 'none';
+      gridEl.style.display = 'grid';
+      paginationEl.style.display = 'flex';
+      statusEl.textContent = '● En vivo';
+      statusEl.className = 'status online';
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+      refreshFromData();
+      if (searchMatchNumber !== null && !sold.has(searchMatchNumber)) {
+        searchMatchNumber = null;
+        setSearchMessage('');
+      }
+    }, function() {
+      statusEl.textContent = 'Sin conexión';
+      statusEl.className = 'status';
+    });
+
+    saveBtn.onclick = saveCurrentEntry;
+    freeBtn.onclick = freeCurrentEntry;
+    closeModalBtn.onclick = closeEditor;
+    cancelBtn.onclick = closeEditor;
+    drawBtn.onclick = runDraw;
+    searchBtn.onclick = performQuickSearch;
+    quickSearchInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        performQuickSearch();
+      }
+    });
+    closeWinnerBtn.onclick = closeWinnerPopup;
+    resetBtn.onclick = function() {
+      if (!confirm('¿Reiniciar todo el tablero? Esto borrará todos los números vendidos para todos.')) {
+        return;
+      }
+      remove(soldRef);
+      highlightedWinner = null;
+      updateWinnerCard(null);
+    };
+    modalEl.addEventListener('click', function(event) {
+      if (event.target === modalEl) {
+        closeEditor();
+      }
+    });
+    window.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && modalEl.classList.contains('open')) {
+        closeEditor();
+      }
+      if (event.key === 'Escape' && winnerOverlayEl.classList.contains('open')) {
+        closeWinnerPopup();
+      }
+    });
+    winnerOverlayEl.addEventListener('click', function(event) {
+      if (event.target === winnerOverlayEl) {
+        closeWinnerPopup();
+      }
+    });
+    window.resetAll = function() {
+      resetBtn.click();
+    };
+    window.runDraw = runDraw;
+  </script>
+
+</body>
+</html>
